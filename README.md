@@ -38,9 +38,10 @@ This will:
 ```
 
 ### Command Line Options
-- `--configure`       Enable interactive configuration mode
-- `--username`        Upstream SOCKS5 username (can also use env var `UPSTREAM_USERNAME`)
-- `--password`        Upstream SOCKS5 password (can also use env var `UPSTREAM_PASSWORD`)
+- `--version`        Show version information
+- `--configure`      Enable interactive configuration mode
+- `--username`       Upstream SOCKS5 username (can also use env var `UPSTREAM_USERNAME`)
+- `--password`       Upstream SOCKS5 password (can also use env var `UPSTREAM_PASSWORD`)
 - `--encpass`         Password to encrypt/decrypt stored credentials
 - `--upstream-host`   Upstream SOCKS5 proxy hostname (required on first run)
 - `--upstream-port`   Upstream SOCKS5 proxy port (required on first run)

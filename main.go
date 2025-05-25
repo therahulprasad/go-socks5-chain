@@ -16,6 +16,8 @@ import (
 	"golang.org/x/term"
 )
 
+const Version = "0.1"
+
 func readPassword(prompt string) (string, error) {
 	fmt.Print(prompt)
 	password, err := term.ReadPassword(int(syscall.Stdin))
@@ -51,6 +53,7 @@ func setupInteractiveConfig() (string, string, string, error) {
 
 func main() {
 	// Command line flags
+	showVersion := flag.Bool("version", false, "Show version information")
 	username := flag.String("username", os.Getenv("UPSTREAM_USERNAME"), "Upstream SOCKS5 username")
 	password := flag.String("password", os.Getenv("UPSTREAM_PASSWORD"), "Upstream SOCKS5 password")
 	encpass := flag.String("encpass", os.Getenv("SOCKS5CHAIN_PASSWORD"), "Password to encrypt/decrypt stored credentials")
@@ -62,6 +65,12 @@ func main() {
 	consoleLog := flag.Bool("console-log", false, "Enable console logging")
 	configureMode := flag.Bool("configure", false, "Interactive mode to configure credentials")
 	flag.Parse()
+
+	// Show version if requested
+	if *showVersion {
+		fmt.Printf("go-socks5-chain version %s\n", Version)
+		os.Exit(0)
+	}
 
 	// Setup logging
 	if *logFile != "" {
