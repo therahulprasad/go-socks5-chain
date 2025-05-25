@@ -1,0 +1,31 @@
+# Build stage
+FROM --platform=linux/arm64 golang:1.21-alpine AS builder
+
+WORKDIR /build
+COPY . .
+
+# Build with security flags enabled for Apple Silicon
+RUN CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
+    -ldflags="-w -s" \
+    -trimpath \
+    -o socks5-proxy
+
+# Final stage
+FROM --platform=linux/arm64 alpine:latest
+
+# Create non-root user
+RUN adduser -D -u 10001 appuser
+
+WORKDIR /app
+COPY --from=builder /build/socks5-proxy .
+
+# Set proper permissions for macOS paths
+RUN chown appuser:appuser /app/socks5-proxy && \
+    chmod 500 /app/socks5-proxy && \
+    mkdir -p /Users/appuser/Library/Application\ Support/go-socks5-chain && \
+    chown -R appuser:appuser /Users/appuser/Library/Application\ Support/go-socks5-chain
+
+USER appuser
+
+EXPOSE 1080
+ENTRYPOINT ["/app/socks5-proxy"]
