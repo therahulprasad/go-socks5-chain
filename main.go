@@ -53,7 +53,7 @@ func main() {
 	// Command line flags
 	username := flag.String("username", os.Getenv("UPSTREAM_USERNAME"), "Upstream SOCKS5 username")
 	password := flag.String("password", os.Getenv("UPSTREAM_PASSWORD"), "Upstream SOCKS5 password")
-	encpass := flag.String("encpass", "", "Password to encrypt/decrypt stored credentials")
+	encpass := flag.String("encpass", os.Getenv("SOCKS5CHAIN_PASSWORD"), "Password to encrypt/decrypt stored credentials")
 	upstreamHost := flag.String("upstream-host", "", "Upstream SOCKS5 proxy hostname")
 	upstreamPort := flag.Int("upstream-port", 0, "Upstream SOCKS5 proxy port")
 	localHost := flag.String("local-host", "127.0.0.1", "Local host to bind")

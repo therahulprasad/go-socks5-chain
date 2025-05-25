@@ -1,12 +1,18 @@
-# SOCKS5 Upstream Proxy Chain (Go Implementation)
+# SOCKS5 Upstream Proxy Chain
 
-A Go SOCKS5 proxy server that forwards all client connections through a configurable upstream SOCKS5 proxy. This project is designed for privacy, chaining proxies, or routing traffic through a remote SOCKS5 endpoint.
+A Go SOCKS5 proxy server that forwards all client connections through a configurable upstream SOCKS5 proxy.### Security Note
+- Credentials are encrypted using AES-GCM with a key derived from your encryption password
+- The encryption password is never stored, you must provide it each time
+- If you forget your encryption password, you'll need to reconfigure the proxy
+- When using Docker, credentials are stored in a named volume for persistence
+- All Docker images run as non-root users with minimal permissionss project is designed for privacy, chaining proxies, or routing traffic through a remote SOCKS5 endpoint.
 
 ## Building and Running
 
 ### Requirements
-- Go 1.19 or newer
+- Go 1.21 or newer
 - Linux, macOS, or Windows
+- Docker (optional, for containerized deployment)
 
 ### Building from Source
 ```sh
@@ -32,7 +38,7 @@ This will:
 ```
 
 ### Command Line Options
-- `--configure`        Enable interactive configuration mode
+- `--configure`       Enable interactive configuration mode
 - `--username`        Upstream SOCKS5 username (can also use env var `UPSTREAM_USERNAME`)
 - `--password`        Upstream SOCKS5 password (can also use env var `UPSTREAM_PASSWORD`)
 - `--encpass`         Password to encrypt/decrypt stored credentials
@@ -68,11 +74,15 @@ export UPSTREAM_PASSWORD=mypass
 
 ## Docker Support
 
-The project includes platform-specific Dockerfiles for Linux, Windows, and macOS (Apple Silicon).
+The project includes platform-specific Dockerfiles for Linux, Windows, and macOS (Apple Silicon). The Dockerfiles are optimized to:
+- Only copy necessary source files and dependencies
+- Use multi-stage builds to minimize final image size
+- Follow security best practices with non-root user and minimal permissions
+- Support proper credential storage with Docker volumes
 
 ### Building for Linux (amd64/arm64)
 ```sh
-docker build -t go-socks5-chain-linux -f Dockerfile .
+docker build -t go-socks5-chain -f Dockerfile .
 ```
 
 ### Building for Windows
@@ -91,8 +101,8 @@ docker build -t go-socks5-chain-mac -f Dockerfile.mac-arm64 .
 #### Linux
 ```sh
 docker run --rm -it -p 1080:1080 \
-  -v $HOME/.go-socks5-chain:/root/.go-socks5-chain \
-  go-socks5-chain-linux \
+  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
+  go-socks5-chain \
   --upstream-host proxy.example.com --upstream-port 1080 --console-log
 ```
 

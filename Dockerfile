@@ -1,7 +1,14 @@
 FROM golang:1.24-alpine AS builder
 
 WORKDIR /build
-COPY . .
+
+# Copy only necessary files
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY main.go ./
+COPY config/ config/
+COPY proxy/ proxy/
 
 # Build with security flags enabled
 RUN CGO_ENABLED=0 GOOS=linux go build \
