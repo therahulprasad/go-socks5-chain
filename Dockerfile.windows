@@ -5,13 +5,13 @@ WORKDIR C:\build
 COPY . .
 
 # Build with security flags enabled for Windows
-RUN go build -ldflags="-w -s" -trimpath -o socks5-proxy.exe
+RUN go build -ldflags="-w -s" -trimpath -o go-socks5-chain.exe
 
 # Final stage
 FROM --platform=windows/amd64 mcr.microsoft.com/windows/servercore:ltsc2019
 
 WORKDIR C:\app
-COPY --from=builder C:\build\socks5-proxy.exe .
+COPY --from=builder C:\build\go-socks5-chain.exe .
 
 # Create config directory with proper Windows path
 RUN mkdir "C:\Users\ContainerUser\AppData\Local\go-socks5-chain"
@@ -20,4 +20,4 @@ RUN mkdir "C:\Users\ContainerUser\AppData\Local\go-socks5-chain"
 USER ContainerUser
 
 EXPOSE 1080
-ENTRYPOINT ["C:\\app\\socks5-proxy.exe"]
+ENTRYPOINT ["C:\\app\\go-socks5-chain.exe"]

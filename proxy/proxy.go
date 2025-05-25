@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"socks5-proxy/config"
+	"go-socks5-chain/config"
 )
 
 const (

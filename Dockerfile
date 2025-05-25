@@ -7,21 +7,21 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-w -s" \
     -trimpath \
-    -o socks5-proxy
+    -o go-socks5-chain
 
 FROM alpine:latest
 RUN adduser -D -u 10001 appuser
 
 WORKDIR /app
-COPY --from=builder /build/socks5-proxy .
+COPY --from=builder /build/go-socks5-chain .
 
 # Set proper permissions
-RUN chown appuser:appuser /app/socks5-proxy && \
-    chmod 500 /app/socks5-proxy && \
+RUN chown appuser:appuser /app/go-socks5-chain && \
+    chmod 500 /app/go-socks5-chain && \
     mkdir -p /home/appuser/.go-socks5-chain && \
     chown appuser:appuser /home/appuser/.go-socks5-chain
 
 USER appuser
 
 EXPOSE 1080
-ENTRYPOINT ["/app/socks5-proxy"]
+ENTRYPOINT ["/app/go-socks5-chain"]

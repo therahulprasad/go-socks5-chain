@@ -8,7 +8,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
     -ldflags="-w -s" \
     -trimpath \
-    -o socks5-proxy
+    -o go-socks5-chain
 
 # Final stage
 FROM --platform=linux/arm64 alpine:latest
@@ -17,15 +17,15 @@ FROM --platform=linux/arm64 alpine:latest
 RUN adduser -D -u 10001 appuser
 
 WORKDIR /app
-COPY --from=builder /build/socks5-proxy .
+COPY --from=builder /build/go-socks5-chain .
 
 # Set proper permissions for macOS paths
-RUN chown appuser:appuser /app/socks5-proxy && \
-    chmod 500 /app/socks5-proxy && \
+RUN chown appuser:appuser /app/go-socks5-chain && \
+    chmod 500 /app/go-socks5-chain && \
     mkdir -p /Users/appuser/Library/Application\ Support/go-socks5-chain && \
     chown -R appuser:appuser /Users/appuser/Library/Application\ Support/go-socks5-chain
 
 USER appuser
 
 EXPOSE 1080
-ENTRYPOINT ["/app/socks5-proxy"]
+ENTRYPOINT ["/app/go-socks5-chain"]

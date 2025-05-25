@@ -1,4 +1,4 @@
-module socks5-proxy
+module go-socks5-chain
 
 go 1.23.0
 

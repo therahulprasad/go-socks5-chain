@@ -19,7 +19,7 @@ There are two ways to configure the proxy:
 
 1. **Interactive Configuration Mode**:
 ```sh
-./socks5-proxy --configure --upstream-host proxy.example.com --upstream-port 1080
+./go-socks5-chain --configure --upstream-host proxy.example.com --upstream-port 1080
 ```
 This will:
 - Prompt for username, password, and encryption password
@@ -28,7 +28,7 @@ This will:
 
 2. **Command Line Arguments**:
 ```sh
-./socks5-proxy --username myuser --password mypass --upstream-host proxy.example.com --upstream-port 1080
+./go-socks5-chain --username myuser --password mypass --upstream-host proxy.example.com --upstream-port 1080
 ```
 
 ### Command Line Options
@@ -50,12 +50,12 @@ Once configured, credentials are stored securely in `~/.go-socks5-chain/`:
 
 For subsequent runs, you only need to provide the encryption password:
 ```sh
-./socks5-proxy --encpass mypass
+./go-socks5-chain --encpass mypass
 ```
 
 If you don't provide the encryption password, you'll be prompted for it:
 ```sh
-./socks5-proxy
+./go-socks5-chain
 ```
 
 ### Environment Variables
@@ -63,7 +63,7 @@ You can also set credentials via environment variables:
 ```sh
 export UPSTREAM_USERNAME=myuser
 export UPSTREAM_PASSWORD=mypass
-./socks5-proxy --upstream-host proxy.example.com --upstream-port 1080
+./go-socks5-chain --upstream-host proxy.example.com --upstream-port 1080
 ```
 
 ## Docker Support
@@ -72,18 +72,18 @@ The project includes platform-specific Dockerfiles for Linux, Windows, and macOS
 
 ### Building for Linux (amd64/arm64)
 ```sh
-docker build -t socks5-proxy-linux -f Dockerfile .
+docker build -t go-socks5-chain-linux -f Dockerfile .
 ```
 
 ### Building for Windows
 ```powershell
 # Switch to Windows containers first
-docker build -t socks5-proxy-windows -f Dockerfile.windows .
+docker build -t go-socks5-chain-windows -f Dockerfile.windows .
 ```
 
 ### Building for macOS (Apple Silicon)
 ```sh
-docker build -t socks5-proxy-mac -f Dockerfile.mac-arm64 .
+docker build -t go-socks5-chain-mac -f Dockerfile.mac-arm64 .
 ```
 
 ### Running Docker Containers
@@ -92,7 +92,7 @@ docker build -t socks5-proxy-mac -f Dockerfile.mac-arm64 .
 ```sh
 docker run --rm -it -p 1080:1080 \
   -v $HOME/.go-socks5-chain:/root/.go-socks5-chain \
-  socks5-proxy-linux \
+  go-socks5-chain-linux \
   --upstream-host proxy.example.com --upstream-port 1080 --console-log
 ```
 
@@ -100,7 +100,7 @@ docker run --rm -it -p 1080:1080 \
 ```powershell
 docker run --rm -it -p 1080:1080 `
   -v $env:USERPROFILE\AppData\Local\go-socks5-chain:C:\Users\ContainerUser\AppData\Local\go-socks5-chain `
-  socks5-proxy-windows `
+  go-socks5-chain-windows `
   --upstream-host proxy.example.com --upstream-port 1080 --console-log
 ```
 
@@ -108,7 +108,7 @@ docker run --rm -it -p 1080:1080 `
 ```sh
 docker run --rm -it -p 1080:1080 \
   -v "$HOME/Library/Application Support/go-socks5-chain:/Users/appuser/Library/Application Support/go-socks5-chain" \
-  socks5-proxy-mac \
+  go-socks5-chain-mac \
   --upstream-host proxy.example.com --upstream-port 1080 --console-log
 ```
 
@@ -118,17 +118,17 @@ You can also build and run the application natively for each platform:
 
 #### Linux
 ```sh
-GOOS=linux GOARCH=amd64 go build -o socks5-proxy
+GOOS=linux GOARCH=amd64 go build -o go-socks5-chain
 ```
 
 #### Windows
 ```sh
-GOOS=windows GOARCH=amd64 go build -o socks5-proxy.exe
+GOOS=windows GOARCH=amd64 go build -o go-socks5-chain.exe
 ```
 
 #### macOS (Apple Silicon)
 ```sh
-GOOS=darwin GOARCH=arm64 go build -o socks5-proxy
+GOOS=darwin GOARCH=arm64 go build -o go-socks5-chain
 ```
 
 ## Security Note

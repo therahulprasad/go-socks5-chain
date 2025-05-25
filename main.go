@@ -10,8 +10,8 @@ import (
 	"strings"
 	"syscall"
 
-	"socks5-proxy/config"
-	"socks5-proxy/proxy"
+	"go-socks5-chain/config"
+	"go-socks5-chain/proxy"
 
 	"golang.org/x/term"
 )
