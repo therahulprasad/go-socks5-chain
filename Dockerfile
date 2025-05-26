@@ -16,6 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -trimpath \
     -o go-socks5-chain
 
+# Final stage
 FROM alpine:latest
 RUN adduser -D -u 10001 appuser
 
@@ -26,7 +27,7 @@ COPY --from=builder /build/go-socks5-chain .
 RUN chown appuser:appuser /app/go-socks5-chain && \
     chmod 500 /app/go-socks5-chain && \
     mkdir -p /home/appuser/.go-socks5-chain && \
-    chown appuser:appuser /home/appuser/.go-socks5-chain
+    chown -R appuser:appuser /home/appuser/.go-socks5-chain
 
 USER appuser
 
