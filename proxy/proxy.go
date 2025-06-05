@@ -286,14 +286,18 @@ func (s *Server) forwardTraffic(client, upstream net.Conn) {
 	go func() {
 		defer wg.Done()
 		io.Copy(upstream, client)
-		upstream.(*net.TCPConn).CloseWrite()
+		if tcpConn, ok := upstream.(*net.TCPConn); ok {
+			tcpConn.CloseWrite()
+		}
 	}()
 
 	// Upstream -> Client
 	go func() {
 		defer wg.Done()
 		io.Copy(client, upstream)
-		client.(*net.TCPConn).CloseWrite()
+		if tcpConn, ok := client.(*net.TCPConn); ok {
+			tcpConn.CloseWrite()
+		}
 	}()
 
 	wg.Wait()

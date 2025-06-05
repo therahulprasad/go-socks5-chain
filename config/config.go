@@ -30,7 +30,8 @@ type Config struct {
 	UpstreamPort int
 }
 
-func getConfigPath() (string, error) {
+// getConfigPath is a variable so it can be overridden in tests
+var getConfigPath = func() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -38,9 +39,18 @@ func getConfigPath() (string, error) {
 	return filepath.Join(homeDir, configDir), nil
 }
 
+// GetConfigPath returns the current config path function (for testing)
+func GetConfigPath() func() (string, error) {
+	return getConfigPath
+}
+
+// SetConfigPathForTesting allows overriding the config path for tests
+func SetConfigPathForTesting(fn func() (string, error)) {
+	getConfigPath = fn
+}
+
 func LoadOrCreate(username, password, encpass, upstreamHost string, upstreamPort int) (*Config, error) {
 	configPath, err := getConfigPath()
-	fmt.Println("Config path:", configPath)
 	if err != nil {
 		return nil, err
 	}
