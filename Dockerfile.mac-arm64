@@ -1,19 +1,23 @@
 # Build stage
-FROM --platform=linux/arm64 golang:1.21-alpine AS builder
+FROM --platform=linux/arm64 golang:1.24-alpine AS builder
 
 WORKDIR /build
-COPY . .
+# Copy only necessary files
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY main.go ./
+COPY config/ config/
+COPY proxy/ proxy/
 
 # Build with security flags enabled for Apple Silicon
-RUN CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
     -ldflags="-w -s" \
     -trimpath \
     -o go-socks5-chain
 
 # Final stage
 FROM --platform=linux/arm64 alpine:latest
-
-# Create non-root user
 RUN adduser -D -u 10001 appuser
 
 WORKDIR /app
@@ -22,8 +26,8 @@ COPY --from=builder /build/go-socks5-chain .
 # Set proper permissions for macOS paths
 RUN chown appuser:appuser /app/go-socks5-chain && \
     chmod 500 /app/go-socks5-chain && \
-    mkdir -p /Users/appuser/Library/Application\ Support/go-socks5-chain && \
-    chown -R appuser:appuser /Users/appuser/Library/Application\ Support/go-socks5-chain
+    mkdir -p /home/appuser/.go-socks5-chain && \
+    chown -R appuser:appuser /home/appuser/.go-socks5-chain
 
 USER appuser
 

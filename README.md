@@ -1,11 +1,83 @@
 # SOCKS5 Upstream Proxy Chain
 
-A Go SOCKS5 proxy server that forwards all client connections through a configurable upstream SOCKS5 proxy.### Security Note
+A Go SOCKS5 proxy server that forwards all client connections through a configurable upstream SOCKS5 proxy.
+
+### Security Note
 - Credentials are encrypted using AES-GCM with a key derived from your encryption password
 - The encryption password is never stored, you must provide it each time
 - If you forget your encryption password, you'll need to reconfigure the proxy
 - When using Docker, credentials are stored in a named volume for persistence
 - All Docker images run as non-root users with minimal permissionss project is designed for privacy, chaining proxies, or routing traffic through a remote SOCKS5 endpoint.
+
+
+## Docker Support
+
+The project includes platform-specific Dockerfiles for Linux, Windows, and macOS (Apple Silicon). The Dockerfiles are optimized to:
+- Only copy necessary source files and dependencies
+- Use multi-stage builds to minimize final image size
+- Follow security best practices with non-root user and minimal permissions
+- Support proper credential storage with Docker volumes
+
+#### Building for Linux (amd64)
+```sh
+docker build -t go-socks5-chain -f Dockerfile .
+```
+
+#### Building for Windows
+```powershell
+# Switch to Windows containers first
+docker build -t go-socks5-chain-windows -f Dockerfile.windows .
+```
+
+#### Building for macOS (Apple Silicon)
+```sh
+docker build -t go-socks5-chain-mac -f Dockerfile.mac-arm64 .
+```
+
+### Running Docker Containers
+
+#### Linux / macOS (intel)
+For initial run credentials needs to be configured
+```sh 
+docker run --rm -it -p 1080:1080 \
+  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
+  go-socks5-chain \
+  --upstream-host proxy.example.com --upstream-port 1080 --local-host 0.0.0.0 --console-log --configure
+```
+
+For next run you can just use the encryption password 
+```sh
+docker run --rm -it -p 1080:1080 \
+  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
+  go-socks5-chain \
+  --upstream-host proxy.example.com --upstream-port 1080 --local-host 0.0.0.0 --console-log
+```
+
+Daemon mode: If you want to run it headless without need to input password, pass the encryption password as environment variable.
+```sh
+ export SOCKS5CHAIN_PASSWORD="yourpassword"
+docker run --rm -p 1080:1080 \
+  -e SOCKS5CHAIN_PASSWORD=$SOCKS5CHAIN_PASSWORD
+  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
+  go-socks5-chain \
+  --upstream-host proxy.example.com --upstream-port 1080 --local-host 0.0.0.0 --console-log
+```
+
+#### macOS (Apple Silicon)
+```sh
+docker run --rm -it -p 1080:1080 \
+  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
+  go-socks5-chain \
+  --upstream-host proxy.example.com --upstream-port 1080 --console-log
+```
+
+#### Windows (I haven't tested it yet)
+```powershell
+docker run --rm -it -p 1080:1080 \
+  -v $env:USERPROFILE\AppData\Local\go-socks5-chain:C:\Users\ContainerUser\AppData\Local\go-socks5-chain \
+  go-socks5-chain \
+  --upstream-host proxy.example.com --upstream-port 1080 --console-log
+```
 
 ## Building and Running
 
@@ -73,55 +145,6 @@ export UPSTREAM_PASSWORD=mypass
 ./go-socks5-chain --upstream-host proxy.example.com --upstream-port 1080
 ```
 
-## Docker Support
-
-The project includes platform-specific Dockerfiles for Linux, Windows, and macOS (Apple Silicon). The Dockerfiles are optimized to:
-- Only copy necessary source files and dependencies
-- Use multi-stage builds to minimize final image size
-- Follow security best practices with non-root user and minimal permissions
-- Support proper credential storage with Docker volumes
-
-### Building for Linux (amd64/arm64)
-```sh
-docker build -t go-socks5-chain -f Dockerfile .
-```
-
-### Building for Windows
-```powershell
-# Switch to Windows containers first
-docker build -t go-socks5-chain-windows -f Dockerfile.windows .
-```
-
-### Building for macOS (Apple Silicon)
-```sh
-docker build -t go-socks5-chain-mac -f Dockerfile.mac-arm64 .
-```
-
-### Running Docker Containers
-
-#### Linux
-```sh
-docker run --rm -it -p 1080:1080 \
-  -v go-socks5-chain-data:/home/appuser/.go-socks5-chain \
-  go-socks5-chain \
-  --upstream-host proxy.example.com --upstream-port 1080 --console-log
-```
-
-#### Windows
-```powershell
-docker run --rm -it -p 1080:1080 `
-  -v $env:USERPROFILE\AppData\Local\go-socks5-chain:C:\Users\ContainerUser\AppData\Local\go-socks5-chain `
-  go-socks5-chain-windows `
-  --upstream-host proxy.example.com --upstream-port 1080 --console-log
-```
-
-#### macOS (Apple Silicon)
-```sh
-docker run --rm -it -p 1080:1080 \
-  -v "$HOME/Library/Application Support/go-socks5-chain:/Users/appuser/Library/Application Support/go-socks5-chain" \
-  go-socks5-chain-mac \
-  --upstream-host proxy.example.com --upstream-port 1080 --console-log
-```
 
 ### Native Builds
 
