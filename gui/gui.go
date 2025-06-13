@@ -31,7 +31,9 @@ func NewGUI() *GUI {
 
 func (g *GUI) Run() {
 	g.app.Settings().SetTheme(&myTheme{})
+	g.app.SetIcon(resourceIconPng)
 	g.window = g.app.NewWindow("Go SOCKS5 Chain Configuration")
+	g.window.SetIcon(resourceIconPng)
 	g.window.Resize(fyne.NewSize(600, 500))
 	g.window.CenterOnScreen()
 
