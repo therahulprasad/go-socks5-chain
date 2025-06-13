@@ -209,3 +209,68 @@ func decrypt(encData []byte, password string) ([]byte, error) {
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
+
+// ConfigExists checks if configuration files exist
+func ConfigExists() bool {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return false
+	}
+	credsFilePath := filepath.Join(configPath, credsFile)
+	_, err = os.Stat(credsFilePath)
+	return err == nil
+}
+
+// EnsureConfigDir creates the config directory if it doesn't exist
+func EnsureConfigDir() error {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(configPath, 0700)
+}
+
+// SaveConfig saves the configuration with encryption
+func SaveConfig(cfg *Config, encpass string) error {
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	configFilePath := filepath.Join(configPath, configFile)
+	credsFilePath := filepath.Join(configPath, credsFile)
+
+	// Save host/port config
+	hostConfig := struct {
+		UpstreamHost string `json:"upstream_host"`
+		UpstreamPort int    `json:"upstream_port"`
+	}{
+		UpstreamHost: cfg.UpstreamHost,
+		UpstreamPort: cfg.UpstreamPort,
+	}
+
+	data, err := json.Marshal(hostConfig)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(configFilePath, data, 0600); err != nil {
+		return err
+	}
+
+	// Save encrypted credentials
+	if encpass != "" {
+		credsData, err := json.Marshal(cfg)
+		if err != nil {
+			return err
+		}
+		encrypted, err := encrypt(credsData, encpass)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(credsFilePath, encrypted, 0600); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

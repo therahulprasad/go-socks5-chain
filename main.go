@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"go-socks5-chain/config"
+	"go-socks5-chain/gui"
 	"go-socks5-chain/proxy"
 
 	"golang.org/x/term"
@@ -64,6 +65,7 @@ func main() {
 	logFile := flag.String("log-file", "", "Log file location")
 	consoleLog := flag.Bool("console-log", false, "Enable console logging")
 	configureMode := flag.Bool("configure", false, "Interactive mode to configure credentials")
+	guiMode := flag.Bool("gui", false, "Launch graphical user interface for configuration")
 	flag.Parse()
 
 	// Show version if requested
@@ -83,6 +85,13 @@ func main() {
 	}
 	if *consoleLog {
 		log.SetOutput(os.Stdout)
+	}
+
+	// Handle GUI mode if requested
+	if *guiMode {
+		g := gui.NewGUI()
+		g.Run()
+		return
 	}
 
 	// Handle interactive configuration if requested
