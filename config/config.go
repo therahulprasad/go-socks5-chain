@@ -28,6 +28,9 @@ type Config struct {
 	Password     string
 	UpstreamHost string
 	UpstreamPort int
+	LocalHost    string
+	LocalPort    int
+	LogFile      string
 }
 
 // getConfigPath is a variable so it can be overridden in tests

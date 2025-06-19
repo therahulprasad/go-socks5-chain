@@ -161,11 +161,21 @@ func (g *GUI) showConfigurationEditor() {
 	originalPassword := ""
 	originalHost := ""
 	originalPort := ""
+	originalLocalHost := "127.0.0.1"
+	originalLocalPort := "1080"
+	originalLogFile := ""
 	if g.config != nil {
 		originalUsername = g.config.Username
 		originalPassword = g.config.Password
 		originalHost = g.config.UpstreamHost
 		originalPort = strconv.Itoa(g.config.UpstreamPort)
+		if g.config.LocalHost != "" {
+			originalLocalHost = g.config.LocalHost
+		}
+		if g.config.LocalPort > 0 {
+			originalLocalPort = strconv.Itoa(g.config.LocalPort)
+		}
+		originalLogFile = g.config.LogFile
 	}
 
 	// Create form fields
@@ -194,15 +204,26 @@ func (g *GUI) showConfigurationEditor() {
 	}
 
 	g.localHostEntry = widget.NewEntry()
-	g.localHostEntry.Text = "127.0.0.1"
 	g.localHostEntry.PlaceHolder = "127.0.0.1"
+	if g.config != nil && g.config.LocalHost != "" {
+		g.localHostEntry.Text = g.config.LocalHost
+	} else {
+		g.localHostEntry.Text = "127.0.0.1"
+	}
 
 	g.localPortEntry = widget.NewEntry()
-	g.localPortEntry.Text = "1080"
 	g.localPortEntry.PlaceHolder = "1080"
+	if g.config != nil && g.config.LocalPort > 0 {
+		g.localPortEntry.Text = strconv.Itoa(g.config.LocalPort)
+	} else {
+		g.localPortEntry.Text = "1080"
+	}
 
 	g.logFileEntry = widget.NewEntry()
 	g.logFileEntry.PlaceHolder = "/path/to/logfile (optional)"
+	if g.config != nil {
+		g.logFileEntry.Text = g.config.LogFile
+	}
 
 	// Determine button text based on whether it's new or existing config
 	buttonText := "Save"
@@ -240,6 +261,9 @@ func (g *GUI) showConfigurationEditor() {
 			Password:     g.passwordEntry.Text,
 			UpstreamHost: g.hostEntry.Text,
 			UpstreamPort: port,
+			LocalHost:    g.localHostEntry.Text,
+			LocalPort:    localPort,
+			LogFile:      g.logFileEntry.Text,
 		}
 
 		// Save configuration
@@ -259,6 +283,9 @@ func (g *GUI) showConfigurationEditor() {
 		originalPassword = g.passwordEntry.Text
 		originalHost = g.hostEntry.Text
 		originalPort = g.portEntry.Text
+		originalLocalHost = g.localHostEntry.Text
+		originalLocalPort = g.localPortEntry.Text
+		originalLogFile = g.logFileEntry.Text
 
 		// Enable start button after successful save
 		if g.startButton != nil {
@@ -286,9 +313,9 @@ func (g *GUI) showConfigurationEditor() {
 				g.passwordEntry.Text != originalPassword ||
 				g.hostEntry.Text != originalHost ||
 				g.portEntry.Text != originalPort ||
-				g.localHostEntry.Text != "127.0.0.1" ||
-				g.localPortEntry.Text != "1080" ||
-				g.logFileEntry.Text != ""
+				g.localHostEntry.Text != originalLocalHost ||
+				g.localPortEntry.Text != originalLocalPort ||
+				g.logFileEntry.Text != originalLogFile
 		}
 
 		// Only enable save button if there are changes AND server is not running
