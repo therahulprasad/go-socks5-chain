@@ -16,26 +16,32 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
 type GUI struct {
-	app            fyne.App
-	window         fyne.Window
-	config         *config.Config
-	encpass        string
-	isNewUser      bool
-	server         *proxy.Server
-	serverMutex    sync.Mutex
-	startButton    *widget.Button
-	saveButton     *widget.Button
-	localHostEntry *widget.Entry
-	localPortEntry *widget.Entry
-	usernameEntry  *widget.Entry
-	passwordEntry  *widget.Entry
-	hostEntry      *widget.Entry
-	portEntry      *widget.Entry
-	logFileEntry   *widget.Entry
+	app                 fyne.App
+	window              fyne.Window
+	config              *config.Config
+	encpass             string
+	isNewUser           bool
+	server              *proxy.Server
+	serverMutex         sync.Mutex
+	startButton         *widget.Button
+	saveButton          *widget.Button
+	browseButton        *widget.Button
+	clearButton         *widget.Button
+	copyButton          *widget.Button
+	localHostEntry      *widget.Entry
+	localPortEntry      *widget.Entry
+	usernameEntry       *widget.Entry
+	passwordEntry       *widget.Entry
+	hostEntry           *widget.Entry
+	portEntry           *widget.Entry
+	logFileEntry        *widget.Entry
+	logFileLabel        *widget.Label
+	updateLogFileButtons func()
 }
 
 func NewGUI() *GUI {
@@ -45,11 +51,13 @@ func NewGUI() *GUI {
 }
 
 func (g *GUI) Run() {
-	g.app.Settings().SetTheme(&myTheme{})
+	g.app.Settings().SetTheme(&macOSTheme{})
 	g.app.SetIcon(resourceIconPng)
 	g.window = g.app.NewWindow("Go SOCKS5 Chain Configuration")
 	g.window.SetIcon(resourceIconPng)
-	g.window.Resize(fyne.NewSize(600, 500))
+	// Set fixed window size for non-scrollable layout
+	g.window.Resize(fyne.NewSize(650, 680))
+	g.window.SetFixedSize(true)
 	g.window.CenterOnScreen()
 
 	// Check if configuration exists
@@ -219,11 +227,21 @@ func (g *GUI) showConfigurationEditor() {
 		g.localPortEntry.Text = "1080"
 	}
 
-	g.logFileEntry = widget.NewEntry()
-	g.logFileEntry.PlaceHolder = "/path/to/logfile (optional)"
-	if g.config != nil {
-		g.logFileEntry.Text = g.config.LogFile
+	// Use a label with entry-like styling to avoid scrollbars
+	logFileText := "No log file selected"
+	if g.config != nil && g.config.LogFile != "" {
+		logFileText = g.config.LogFile
 	}
+	
+	// Create a label that looks like a disabled entry
+	g.logFileLabel = widget.NewLabel(logFileText)
+	// Labels truncate by default when they exceed container width
+	
+	// Keep the entry for compatibility but make it hidden
+	g.logFileEntry = widget.NewEntry()
+	g.logFileEntry.Text = logFileText
+	g.logFileEntry.Disable()
+	g.logFileEntry.Hide() // Hide the actual entry
 
 	// Determine button text based on whether it's new or existing config
 	buttonText := "Save"
@@ -339,36 +357,93 @@ func (g *GUI) showConfigurationEditor() {
 	g.localPortEntry.OnChanged = func(string) { checkChanges() }
 	g.logFileEntry.OnChanged = func(string) { checkChanges() }
 
-	// Create form layout with fixed-width labels and aligned entries
+	// Create modern form layout with cards and better spacing
 	formContent := container.NewVBox()
 
-	// Define fixed width for labels to ensure alignment
-	labelWidth := float32(150)
+	// Upstream Proxy Settings Card
+	upstreamCard := widget.NewCard("", "Upstream Proxy Settings", container.NewVBox(
+		container.NewGridWithColumns(2,
+			widget.NewLabel("Username:"), g.usernameEntry,
+			widget.NewLabel("Password:"), g.passwordEntry,
+			widget.NewLabel("Host:"), g.hostEntry,
+			widget.NewLabel("Port:"), g.portEntry,
+		),
+	))
+	formContent.Add(upstreamCard)
 
-	// Create each form row with proper alignment
-	fields := []struct {
-		label  string
-		widget fyne.CanvasObject
-	}{
-		{"Upstream Username:", g.usernameEntry},
-		{"Upstream Password:", g.passwordEntry},
-		{"Upstream Host:", g.hostEntry},
-		{"Upstream Port:", g.portEntry},
-		{"Local Host:", g.localHostEntry},
-		{"Local Port:", g.localPortEntry},
-		{"Log File:", g.logFileEntry},
+	// Local Server Settings Card with some spacing
+	localCard := widget.NewCard("", "Local Server Settings", container.NewVBox(
+		container.NewGridWithColumns(2,
+			widget.NewLabel("Bind Host:"), g.localHostEntry,
+			widget.NewLabel("Bind Port:"), g.localPortEntry,
+		),
+	))
+	formContent.Add(localCard)
+
+	// Create copy button (initially hidden)
+	g.copyButton = widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+		if g.logFileEntry.Text != "" {
+			g.window.Clipboard().SetContent(g.logFileEntry.Text)
+			// Show brief notification
+			dialog.ShowInformation("Copied", "Log file path copied to clipboard", g.window)
+		}
+	})
+	g.copyButton.Importance = widget.LowImportance
+	
+	// Create browse button for log file selection
+	g.browseButton = widget.NewButton("Browse", func() {
+		dialog.ShowFileSave(func(writer fyne.URIWriteCloser, err error) {
+			if err != nil || writer == nil {
+				return
+			}
+			writer.Close()
+			path := writer.URI().Path()
+			g.logFileEntry.SetText(path)
+			g.logFileLabel.SetText(path)
+			g.updateLogFileButtons()
+		}, g.window)
+	})
+	g.browseButton.Importance = widget.LowImportance
+	
+	// Create clear button to remove log file selection
+	g.clearButton = widget.NewButton("Clear", func() {
+		g.logFileEntry.SetText("")
+		g.logFileLabel.SetText("No log file selected")
+		g.updateLogFileButtons()
+	})
+	g.clearButton.Importance = widget.LowImportance
+	
+	// Create file button container - will be updated dynamically
+	fileButtonContainer := container.NewHBox()
+	g.updateLogFileButtons = func() {
+		if g.logFileEntry.Text != "" {
+			fileButtonContainer.Objects = []fyne.CanvasObject{g.copyButton, g.browseButton, g.clearButton}
+		} else {
+			fileButtonContainer.Objects = []fyne.CanvasObject{g.browseButton}
+		}
+		fileButtonContainer.Refresh()
 	}
-
-	for _, field := range fields {
-		label := widget.NewLabel(field.label)
-		// Create a container with fixed width for label
-		labelContainer := container.NewWithoutLayout(label)
-		label.Resize(fyne.NewSize(labelWidth, label.MinSize().Height))
-		label.Move(fyne.NewPos(0, 0))
-
-		row := container.NewBorder(nil, nil, labelContainer, nil, field.widget)
-		formContent.Add(row)
-	}
+	
+	// Set initial button state
+	g.updateLogFileButtons()
+	
+	// Create a fixed-size container for the log file label
+	logFileDisplay := container.NewWithoutLayout(g.logFileLabel)
+	// Set fixed size for the label container to prevent layout changes
+	logFileDisplay.Resize(fyne.NewSize(350, 24)) // Fixed width and height
+	g.logFileLabel.Resize(fyne.NewSize(350, 24))
+	g.logFileLabel.Move(fyne.NewPos(0, 0))
+	
+	// Create log file input with browse button - use label to avoid scrollbars
+	logFileContainer := container.NewBorder(nil, nil, nil, fileButtonContainer, logFileDisplay)
+	
+	// Optional Settings Card
+	optionalCard := widget.NewCard("", "Optional Settings", container.NewVBox(
+		container.NewGridWithColumns(2,
+			widget.NewLabel("Log File:"), logFileContainer,
+		),
+	))
+	formContent.Add(optionalCard)
 
 	// Create start/stop button
 	g.startButton = widget.NewButton("Start", func() {
@@ -381,16 +456,19 @@ func (g *GUI) showConfigurationEditor() {
 		g.startButton.Disable()
 	}
 
-	// Add save and start/stop buttons
-	formContent.Add(widget.NewSeparator())
+	// Add save and start/stop buttons with better styling
+	// Create button container with proper spacing
 	buttonContainer := container.NewHBox(
 		g.saveButton,
+		widget.NewLabel(""), // Add spacing between buttons
 		g.startButton,
 	)
-	formContent.Add(container.NewCenter(buttonContainer))
-
-	// Create scrollable content
-	scroll := container.NewScroll(formContent)
+	
+	// Add the buttons in a padded container
+	buttonSection := container.NewPadded(
+		container.NewCenter(buttonContainer),
+	)
+	formContent.Add(buttonSection)
 
 	var title string
 	if g.isNewUser {
@@ -399,10 +477,18 @@ func (g *GUI) showConfigurationEditor() {
 		title = "Edit SOCKS5 Proxy Settings"
 	}
 
+	// Create a modern header with better typography
+	titleLabel := widget.NewLabelWithStyle(title, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	headerContainer := container.NewVBox(
+		container.NewPadded(titleLabel),
+		widget.NewSeparator(),
+	)
+
+	// Use border layout without scroll for fixed height
 	content := container.NewBorder(
-		container.NewPadded(widget.NewLabelWithStyle(title, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
+		headerContainer,
 		nil, nil, nil,
-		scroll,
+		container.NewPadded(formContent),
 	)
 
 	g.window.SetContent(content)
@@ -477,11 +563,26 @@ func (g *GUI) setFormFieldsEnabled(enabled bool) {
 			g.localPortEntry.Disable()
 		}
 	}
-	if g.logFileEntry != nil {
+	// Log file entry remains disabled as it's read-only
+	if g.browseButton != nil {
 		if enabled {
-			g.logFileEntry.Enable()
+			g.browseButton.Enable()
 		} else {
-			g.logFileEntry.Disable()
+			g.browseButton.Disable()
+		}
+	}
+	if g.clearButton != nil {
+		if enabled {
+			g.clearButton.Enable()
+		} else {
+			g.clearButton.Disable()
+		}
+	}
+	if g.copyButton != nil {
+		if enabled {
+			g.copyButton.Enable()
+		} else {
+			g.copyButton.Disable()
 		}
 	}
 }
